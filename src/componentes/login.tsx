@@ -3,8 +3,9 @@ import { Button, Checkbox, Form, Input } from 'antd';
 import type { FormProps } from 'antd';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../services/firebase.ts";
-
- const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
+  
+function Login() {
+    const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
     const { email, password } = values;
       try {
         const userCredential = await signInWithEmailAndPassword(
@@ -21,9 +22,7 @@ import { auth } from "../services/firebase.ts";
 const onFinishFailed: FormProps<FieldType>['onFinishFailed'] = (errorInfo) => {
     console.log('Failed:', errorInfo);
 };
-  
-function Login() {
-   
+ 
     return (
         <Form
             name="basic"
