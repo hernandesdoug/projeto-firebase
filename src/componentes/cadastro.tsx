@@ -1,14 +1,18 @@
-import { Button, Card, Form, Input, message } from 'antd';
+import { Button, Card, Form, Input, message, DatePicker } from 'antd';
 import type { FormProps } from 'antd';
 import type { FieldType } from "./cadastro.ts";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../services/firebase.ts";
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from "react-router-dom";
+import dayjs from 'dayjs';
+import { toast } from 'react-toastify';
+
 function Cadastro() {
     const navigate = useNavigate();
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {     
-        const { email, password, nomeCompleto } = values;
+        const { email, password, nomeCompleto, birthDate } = values;
+        console.log(values);
         try {
             const userCredential = await createUserWithEmailAndPassword(
                 auth,
@@ -17,7 +21,7 @@ function Cadastro() {
             );
             const id = userCredential.user.uid;
             const saveUser = doc(db, "usuarios", id);
-            await setDoc(saveUser, { nomeCompleto, email });
+            await setDoc(saveUser, { nomeCompleto, email, birthDate });
             message.success("Cadastro realizado com sucesso!");
             navigate("/perfil");
         } catch (error) {
@@ -67,6 +71,16 @@ function Cadastro() {
                     rules={[{ required: true, message: 'Please input your password!' }]}
                 >
                     <Input.Password />
+                </Form.Item>
+
+                 <Form.Item<FieldType>
+                    label="Data Nascimento"
+                    name="birthDate"
+                    getValueProps={(value) => ({value: value ? dayjs(value) : undefined })}
+                    getValueFromEvent={(e) => e?.format("DD/MM/YYYY") }
+                    rules={[{ required: true, message: 'Please input your date!' }]}
+                >
+                    <DatePicker format={"DD/MM/YYYY"} />
                 </Form.Item>
 
                 <Form.Item label={null}>

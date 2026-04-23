@@ -1,16 +1,28 @@
-import { Card, Layout } from 'antd';
-import type { FormProps } from 'antd';
-import { Content, Header } from 'antd/es/layout/layout';
+import { Layout, Card, Flex } from 'antd';
+const { Header, Content, Footer, Sider } = Layout;
+import { headerStyle } from '../assets/perfil';
 
 function Perfil() {
 
     return (
-        <Card title="Perfil">
+        <Layout style={{minHeight: '100%'}}>
+            <Header  style={headerStyle}>Sistema de agendamentos</Header>
             <Layout>
-                <Header>Seu Perfil</Header>
-                <Content>Em construcao</Content>
+                <Sider width="25%"></Sider>
+                <Content>
+                    <Flex wrap gap="large" justify='center' style={{ padding: 24 }}>
+
+                        <Card title="Agendar consulta" style={{ width: 320 }}>
+
+                        </Card>
+                        <Card title="Seus agendamentos" style={{ width: 320 }}>
+
+                        </Card>
+                    </Flex>
+                </Content>
             </Layout>
-        </Card>
+            <Footer style={{ textAlign: 'center' }}>Douglas Hernandes © 2026 </Footer>
+        </Layout>
     )
 }
 export default Perfil;

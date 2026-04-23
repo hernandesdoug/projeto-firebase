@@ -4,6 +4,7 @@ import type { FormProps } from 'antd';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../services/firebase.ts";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 
 function Login() {
     const navigate = useNavigate();
@@ -15,9 +16,10 @@ function Login() {
                 email,
                 password
             );
+            toast.success("Login realizado com sucesso!");
             navigate("/perfil");
-            console.log('Usuário logado:', userCredential.user);
         } catch (error) {
+            toast.error("Erro ao fazer login, verifique suas credenciais!");
             console.error(error);
         }
 
