@@ -3,4 +3,5 @@ export interface FieldType {
   email: string;
   password: string;
   birthDate: string;
+  perfil: string;
 }

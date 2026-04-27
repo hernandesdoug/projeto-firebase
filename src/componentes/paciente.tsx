@@ -2,7 +2,7 @@ import { Layout, Card, Flex } from 'antd';
 const { Header, Content, Footer, Sider } = Layout;
 import { headerStyle } from '../assets/perfil';
 
-function Perfil() {
+function Paciente() {
 
     return (
         <Layout style={{minHeight: '100%'}}>
@@ -25,4 +25,4 @@ function Perfil() {
         </Layout>
     )
 }
-export default Perfil;
+export default Paciente;

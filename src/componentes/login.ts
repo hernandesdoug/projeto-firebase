@@ -1,5 +1,7 @@
 export interface FieldType {
   email: string;
   password: string;
-  remember?: string;
+  remember?: boolean;
+  username: string;
+  perfil: string;
 }
