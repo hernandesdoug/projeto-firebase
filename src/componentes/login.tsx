@@ -46,7 +46,6 @@ function Login() {
                     rules={[
                         { required: true, message: 'Please input your email!' },
                         { type: "email", message: 'Please enter a valid email!' },
-                        {}
                     ]}
                 >
                     <Input />

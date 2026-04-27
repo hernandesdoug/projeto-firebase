@@ -6,7 +6,7 @@ export const headerStyle: CSSProperties = {
   height: 64,
   paddingInline: 48,
   lineHeight: '64px',
-  backgroundColor: '#4096ff',
+  backgroundColor: '#33f0cd',
 };
 
 

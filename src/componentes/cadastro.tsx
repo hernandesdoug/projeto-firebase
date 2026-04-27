@@ -1,4 +1,4 @@
-import { Button, Card, Form, Input, message, DatePicker } from 'antd';
+import { Button, Card, Form, Input, DatePicker } from 'antd';
 import type { FormProps } from 'antd';
 import type { FieldType } from "./cadastro.ts";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -22,11 +22,11 @@ function Cadastro() {
             const id = userCredential.user.uid;
             const saveUser = doc(db, "usuarios", id);
             await setDoc(saveUser, { nomeCompleto, email, birthDate });
-            message.success("Cadastro realizado com sucesso!");
+            toast.success("Cadastro realizado com sucesso!");
             navigate("/perfil");
         } catch (error) {
             console.log(error);
-            message.error("Erro ao cadastrar!");
+            toast.error("Erro ao cadastrar!");
         }
     };
     const onFinishFailed: FormProps<FieldType>['onFinishFailed'] = (errorInfo) => {
