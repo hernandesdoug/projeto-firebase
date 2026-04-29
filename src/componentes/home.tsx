@@ -6,13 +6,13 @@ import { Link } from 'react-router-dom';
 function Home() {
 
     return (
-        <Layout style={{ minHeight: '100%' }}>
+        <Layout style={{ minHeight: '100%'}}>
             <Header style={headerStyle}>
-                <Flex justify='space-between' align='center'>
+                <Flex justify='space-between' align='center' >
                     <div style={{ color: '#fff', fontSize: 18 }}>
                         Sistema de agendamentos
                     </div>
-                    <Flex gap='small'>
+                    <Flex gap='small' >
                         <Button type='link'>
                             <Link to="/login">Login</Link>
                         </Button>

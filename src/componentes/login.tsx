@@ -7,7 +7,6 @@ import { db, auth } from "../services/firebase.ts";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 
-
 function Login() {
     const navigate = useNavigate();
 
@@ -24,18 +23,19 @@ function Login() {
 
             if (!snapshot.exists()) {
                 toast.error("perfil nao encontrado!");
+                return;
             }
 
             const dados = snapshot.data() as FieldType;
+            console.log(dados);
             const perfil = dados.perfil;
+            const name = dados.nomeCompleto;
 
-            const username = email.split('@')[0];
-         
             toast.success("Login realizado com sucesso!");
             if (perfil === "paciente") {
-                navigate(`/paciente/${username}`);
+                navigate(`/paciente/${name}`);
             } else if (perfil === "medico") {
-                navigate(`/medico/${username}`);
+                navigate(`/medico/${name}`);
             } else {
                 console.warn("perfil invalido", perfil);
             }
