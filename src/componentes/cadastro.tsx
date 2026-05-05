@@ -14,7 +14,11 @@ function Cadastro() {
     const [form] = Form.useForm();
     const perfil = Form.useWatch("perfil", form);
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
-        const { email, password, nomeCompleto, birthDate, perfil } = values;
+        const { email, 
+             password, 
+         nomeCompleto, 
+            birthDate, 
+            perfil, convenio, especialidade, crm} = values;
         console.log(values);
         try {
             const userCredential = await createUserWithEmailAndPassword(
@@ -23,10 +27,11 @@ function Cadastro() {
                 password
             );
             const id = userCredential.user.uid;
-            //* 
             const saveUser = doc(db, "usuarios", id);
-            await setDoc(saveUser, { nomeCompleto, email, birthDate, perfil });
-           
+            await setDoc(saveUser, { nomeCompleto, email, birthDate, perfil,
+                ...(perfil === 'medico' && {especialidade, crm}),
+                ...(perfil === 'paciente' && {convenio})
+             });
             toast.success("Cadastro realizado com sucesso!");
             if (perfil === 'paciente') {
                 navigate(`/paciente/${nomeCompleto}`);
@@ -110,6 +115,15 @@ function Cadastro() {
                         </Radio.Group>
 
                     </Form.Item>
+                    {perfil === "paciente" && (
+                        <Form.Item
+                            label="Convênio"
+                            name="convenio"
+                            rules={[{ required: true, message: "Informe o convenio" }]}
+                        >
+                            <Input/>
+                        </Form.Item>
+                    )}
                     {perfil === "medico" && (
                         <Form.Item
                             label="CRM"
@@ -122,7 +136,7 @@ function Cadastro() {
                     {perfil === "medico" && (
                         <Form.Item
                             label="Especialidade"
-                            name="crm"
+                            name="especialidade"
                             rules={[{ required: true, message: "Informe a especialidade" }]}
                         >
                             <Input />

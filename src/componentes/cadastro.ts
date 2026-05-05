@@ -1,18 +1,11 @@
-interface BaseFieldType {
+export interface FieldType {
   nomeCompleto: string;
   email: string;
   password: string;
   birthDate: string;
-}
-
-export interface PacienteFieldType extends BaseFieldType {
-  perfil: "paciente";
-}
-
-export interface MedicoFieldType extends BaseFieldType {
-  perfil: "medico";
+  perfil: string;
+  convenio: string;
   especialidade: string;
   crm: string;
 }
 
-export type FieldType = PacienteFieldType | MedicoFieldType;

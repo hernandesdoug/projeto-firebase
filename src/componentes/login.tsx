@@ -25,9 +25,8 @@ function Login() {
                 toast.error("perfil nao encontrado!");
                 return;
             }
-
+            
             const dados = snapshot.data() as FieldType;
-            console.log(dados);
             const perfil = dados.perfil;
             const name = dados.nomeCompleto;
 
@@ -36,8 +35,10 @@ function Login() {
                 navigate(`/paciente/${name}`);
             } else if (perfil === "medico") {
                 navigate(`/medico/${name}`);
+            } else if (perfil === 'admin') {
+                navigate(`/admin/${name}`);
             } else {
-                console.warn("perfil invalido", perfil);
+                toast.error("perfil inválido");
             }
         } catch (error) {
             toast.error("Erro ao fazer login, verifique suas credenciais!");
