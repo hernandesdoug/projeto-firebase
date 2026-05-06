@@ -1,25 +1,35 @@
-import { Button, Card, Form, Input, DatePicker, Layout, Radio } from 'antd';
+import { Button, Card, Form, Input, DatePicker, Layout, Radio, Select } from 'antd';
 import type { FormProps } from 'antd';
 import type { FieldType } from "./cadastro.ts";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../services/firebase.ts";
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { useNavigate } from "react-router-dom";
 import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 function Cadastro() {
+    const [especialidades, setEspecialidades] = useState<any[]>([]);
     const navigate = useNavigate();
     const [form] = Form.useForm();
     const perfil = Form.useWatch("perfil", form);
+    const getEspecialidades = async () => {
+
+        const querySnapshot = await getDocs(collection(db, "especialidades"));
+        const lista = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        const options = lista.map((item: any) => ({ value: item.id, label: item.nomeEspecialidade }))
+        setEspecialidades(options);
+    }
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
-        const { email, 
-             password, 
-         nomeCompleto, 
-            birthDate, 
-            perfil, convenio, especialidade, crm} = values;
-        console.log(values);
+        const { email,
+            password,
+            nomeCompleto,
+            birthDate,
+            perfil, convenio, especialidade, crm } = values;
         try {
             const userCredential = await createUserWithEmailAndPassword(
                 auth,
@@ -28,10 +38,11 @@ function Cadastro() {
             );
             const id = userCredential.user.uid;
             const saveUser = doc(db, "usuarios", id);
-            await setDoc(saveUser, { nomeCompleto, email, birthDate, perfil,
-                ...(perfil === 'medico' && {especialidade, crm}),
-                ...(perfil === 'paciente' && {convenio})
-             });
+            await setDoc(saveUser, {
+                nomeCompleto, email, birthDate, perfil,
+                ...(perfil === 'medico' && { especialidade, crm }),
+                ...(perfil === 'paciente' && { convenio })
+            });
             toast.success("Cadastro realizado com sucesso!");
             if (perfil === 'paciente') {
                 navigate(`/paciente/${nomeCompleto}`);
@@ -53,6 +64,9 @@ function Cadastro() {
             form.setFieldsValue({ crm: undefined, especialidade: undefined });
         }
     }, [perfil]);
+    useEffect(() => {
+        getEspecialidades();
+    }, []);
     return (
         <Layout style={{ minHeight: '100%' }}>
             <Card title="Cadastro" style={{ minWidth: 500, margin: 'auto' }}>
@@ -121,7 +135,7 @@ function Cadastro() {
                             name="convenio"
                             rules={[{ required: true, message: "Informe o convenio" }]}
                         >
-                            <Input/>
+                            <Input />
                         </Form.Item>
                     )}
                     {perfil === "medico" && (
@@ -130,16 +144,20 @@ function Cadastro() {
                             name="crm"
                             rules={[{ required: true, message: "Informe o CRM" }]}
                         >
-                            <Input/>
+                            <Input />
                         </Form.Item>
                     )}
                     {perfil === "medico" && (
                         <Form.Item
-                            label="Especialidade"
+                            label="Especialidade:"
                             name="especialidade"
-                            rules={[{ required: true, message: "Informe a especialidade" }]}
+                            rules={[{ required: true, message: 'Please input!' }]}
                         >
-                            <Input />
+                            <Select placeholder="Selecione uma especialidade"
+                                options={especialidades}
+
+                            />
+
                         </Form.Item>
                     )}
                     <Form.Item label={null}>

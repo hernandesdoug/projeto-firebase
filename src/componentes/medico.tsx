@@ -1,15 +1,14 @@
-import { Layout, Card, Flex, Menu, Table } from 'antd';
+import { Layout, Card, Flex, Menu, Table, DatePicker, TimePicker, Button } from 'antd';
 import type { TableProps } from 'antd';
 const { Header, Content, Footer, Sider } = Layout;
 import { headerStyle } from '../assets/perfil';
 import { LogoutOutlined, UserOutlined, LockOutlined } from "@ant-design/icons";
-import { Calendar } from 'antd';
 import type { CalendarProps } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useNavigate } from "react-router-dom";
 import { db } from "../services/firebase.ts";
 import { getAuth, signOut } from "firebase/auth";
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
 function Medico() {
@@ -68,7 +67,7 @@ function Medico() {
             return {
                 key: doc.id,
                 name: dados.nomePaciente,
-                date: dados.dataAgendamento,
+                date: dados.dataConsulta,
                 status: dados.status,
             };
         })
@@ -115,7 +114,13 @@ function Medico() {
                 <Content>
                     <Flex wrap gap="large" justify='center' style={{ padding: 24 }}>
                         <Card title="Sua disponibilidade" style={{ maxWidth: 500, width: '100%' }}>
-                            <Calendar fullscreen={false} onPanelChange={onPanelChange} />
+                            <div style={{ display: 'flex', gap: 12}}>
+                                <DatePicker   />
+                                <TimePicker format="HH:mm" />
+                                <Button type="primary">
+                                    Adicionar 
+                                </Button>
+                            </div>  
                         </Card>
                         <Card title={`Agenda do dia - ${dataDia}`} style={{ maxWidth: 500, width: '100%' }}>
                             <Table<DataType> columns={columns} dataSource={data} />

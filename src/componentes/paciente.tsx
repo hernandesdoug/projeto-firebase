@@ -1,20 +1,20 @@
-import { Layout, Card, Flex, Form, Button, DatePicker, Select, Menu } from 'antd';
+import { Layout, Card, Flex, Form, Button, DatePicker, TimePicker, Select, Menu } from 'antd';
 const { Header, Content, Footer, Sider } = Layout;
 import type { FormProps } from 'antd';
 import type { FieldType } from "./paciente.ts";
-import type { Consulta } from "./consulta.ts";
 import { LogoutOutlined, UserOutlined, LockOutlined } from "@ant-design/icons";
 import { headerStyle } from '../assets/perfil';
 import dayjs from 'dayjs';
 import { db } from "../services/firebase.ts";
 import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
-import { collection, query, where, limit, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 
 function Paciente() {
     const [loading, setLoading] = useState(false);
-    const [consulta, setConsulta] = useState<Consulta>();
+    const [consultas, setConsulta] = useState<FieldType[]>([]);
     const [especialidades, setEspecialidades] = useState<any[]>([]);
     const [medicos, setMedicos] = useState<any[]>([]);
     const navigate = useNavigate();
@@ -30,23 +30,24 @@ function Paciente() {
     const onEditProfile = async () => {
 
     }
-    const getConsulta = async (Idpaciente: string) => {
+    const getConsulta = async (idPaciente: string) => {
         setLoading(true);
         const ref = collection(db, "agendamentos");
         const q = query(
             ref,
-            where("Idpaciente", "==", Idpaciente),
+            where("idPaciente", "==", idPaciente),
             where("status", "==", "agendado"),
-            limit(1)
         );
-
+        console.log("IdPaciente:", idPaciente);
         const snapshot = await getDocs(q);
-
-        if (!snapshot.empty) {
-            setConsulta(snapshot.docs[0].data() as Consulta);
-        } else {
-            setConsulta(undefined);
-        }
+    
+        const lista = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...(doc.data() as FieldType)
+        })) ;
+         console.log("Resultados:", lista);
+        setConsulta(lista);
+      
         setLoading(false);
     }
     const getEspecialidades = async () => {
@@ -56,7 +57,7 @@ function Paciente() {
             id: doc.id,
             ...doc.data()
         }));
-        const options = lista.map((item: any) => ({value: item.id, label:item.nomeEspecialidade})) 
+        const options = lista.map((item: any) => ({ value: item.id, label: item.nomeEspecialidade }))
         setEspecialidades(options);
         setLoading(false);
     }
@@ -72,8 +73,8 @@ function Paciente() {
             id: doc.id,
             ...doc.data()
         }));
-        
-        const options = lista.map((item: any) => ({value: item.id, label:item.nomeCompleto})) 
+
+        const options = lista.map((item: any) => ({ value: item.id, label: item.nomeCompleto }))
         setMedicos(options);
         setLoading(false);
     }
@@ -92,7 +93,26 @@ function Paciente() {
         return () => unsubscribe();
     }, []);
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
-
+        setLoading(true);
+        const user = auth.currentUser;
+        const { especialidade,
+            nomeMedico,
+            dataConsulta,
+            horaConsulta } = values;
+        try {
+            const medico = medicos.find( (item) => item.value === nomeMedico);
+            const especialidadeMedico = especialidades.find( (item) => item.value === especialidade); 
+            await addDoc(collection(db, "agendamentos"), {
+                dataConsulta, horaConsulta, nomeMedico: medico.label, especialidade: especialidadeMedico.label,
+                idPaciente: user?.uid, idMedico: nomeMedico, status: "agendado", idEspecialidade: especialidade
+            });
+            toast.success("Consulta agendada com sucesso!");
+        } catch (error) {
+            console.log(error);
+            toast.error("Erro ao agendar!");
+        } finally {
+            setLoading(false);
+        }
     }
     const onFinishFailed: FormProps<FieldType>['onFinishFailed'] = (errorInfo) => {
         console.log('Failed:', errorInfo);
@@ -149,23 +169,23 @@ function Paciente() {
                                     name="especialidade"
                                     rules={[{ required: true, message: 'Please input!' }]}
                                 >
-                                    <Select placeholder="Selecione uma especialidade" 
-                                    options={especialidades}
-                                    onChange={getMedicos}
-                                    loading={loading}
-                                    disabled={loading}
+                                    <Select placeholder="Selecione uma especialidade"
+                                        options={especialidades}
+                                        onChange={getMedicos}
+                                        loading={loading}
+                                        disabled={loading}
                                     />
 
                                 </Form.Item>
                                 <Form.Item
                                     label="Médico:"
-                                    name="medico"
+                                    name="nomeMedico"
                                     rules={[{ required: true, message: 'Please input!' }]}
                                 >
-                                    <Select placeholder="Selecione uma médico" 
-                                    options={medicos}
-                                    loading={loading}
-                                    disabled={loading}
+                                    <Select placeholder="Selecione uma médico"
+                                        options={medicos}
+                                        loading={loading}
+                                        disabled={loading}
                                     />
                                 </Form.Item>
                                 <Form.Item<FieldType>
@@ -177,22 +197,35 @@ function Paciente() {
                                 >
                                     <DatePicker format={"DD/MM/YYYY"} />
                                 </Form.Item>
+                                <Form.Item<FieldType>
+                                    label="Hora:"
+                                    name="horaConsulta"
+                                    getValueProps={(value) => ({ value: value ? dayjs(value, "HH:mm") : undefined })}
+                                    getValueFromEvent={(time) => time?.format("HH:mm")}
+                                    rules={[{ required: true, message: 'Please input your time!' }]}
+                                >
+                                    <TimePicker format="HH:mm" />
+                                </Form.Item>
                                 <Form.Item label={null}>
                                     <Button type="primary" htmlType="submit" loading={loading}
-                                    disabled={loading}>
+                                        disabled={loading}>
                                         Agendar
                                     </Button>
                                 </Form.Item>
                             </Form>
                         </Card>
                         <Card title="Seus agendamentos" style={{ maxWidth: 500, width: '100%' }}>
-                            {consulta ? (
-                                <div>
-                                    <p><strong>Paciente:</strong> {consulta.nomePaciente}</p>
-                                    <p><strong>Data:</strong> {consulta.dataAgendamento}</p>
-                                    <p><strong>Status:</strong> {consulta.status}</p>
-                                    <p><strong>Médico:</strong> {consulta.nomeMedico}</p>
-                                </div>
+                            {consultas.length > 0 ? (
+                                consultas.map((consulta, index) => (
+                                    <div key={index}>
+                                        <p><strong>Paciente:</strong> {consulta.nomePaciente}</p>
+                                        <p><strong>Data:</strong> {consulta.dataConsulta}</p>
+                                        <p><strong>Hora:</strong> {consulta.horaConsulta}</p>
+                                        <p><strong>Status:</strong> {consulta.status}</p>
+                                        <p><strong>Médico:</strong> {consulta.nomeMedico}</p>
+                                        <hr />
+                                    </div>
+                                ))
                             ) : (
                                 <p>Nenhuma consulta agendada</p>
                             )}
