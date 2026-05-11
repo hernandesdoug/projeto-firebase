@@ -1,4 +1,4 @@
-import { Layout, Card, Flex, Menu, Table, DatePicker, TimePicker, Button, Space, message } from 'antd';
+import { Layout, Card, Flex, Menu, Table, DatePicker, TimePicker, Button, Space } from 'antd';
 import type { TableProps } from 'antd';
 const { Header, Content, Footer, Sider } = Layout;
 import { headerStyle } from '../assets/perfil';
@@ -9,6 +9,7 @@ import { db } from "../services/firebase.ts";
 import { getAuth, signOut } from "firebase/auth";
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 function Medico() {
 
@@ -70,13 +71,15 @@ function Medico() {
     };
     const addAgenda = async () => {
         const horarios = geraHorario();
+        const idMedico = auth.currentUser?.uid;
         for (const data of selecionaDatas) {
             await addDoc(collection(db, "agendaMedico"), {
+                idMedico,
                 data: data.format("DD/MM/YYYY"),
                 horarios
             });
         }
-        message.success("Agenda cadastrada com sucesso")
+        toast.success("Agenda cadastrada com sucesso")
         setSelecionaDatas([]);
         setHoraInicio(null);
         setHoraFinal(null);
@@ -87,11 +90,11 @@ function Medico() {
 
         const lista: DataType[] = snapshot.docs.map((doc) => {
             const dados = doc.data();
-
+            console.log(dados);
             return {
                 key: doc.id,
                 name: dados.nomePaciente,
-                date: dados.dataConsulta,
+                date: dados.dataFormatada,
                 status: dados.status,
             };
         })
@@ -137,10 +140,10 @@ function Medico() {
                 <Content>
                     <Flex wrap gap="large" justify='center' style={{ padding: 24 }}>
                         <Card title="Sua disponibilidade" style={{ maxWidth: 500, width: '100%' }}>
-                            <Space direction="vertical" size={'middle'} style={{ width: "100%" }}>
+                            <Space orientation="vertical" size={'middle'} style={{ width: "100%" }}>
                                 <div style={{ width: '100%' }}>
                                     <label style={{ display: "block", marginBottom: 8 }}>
-                                        Datas disponíveis
+                                        Escolha as datas
                                     </label>
                                     <DatePicker
                                         multiple

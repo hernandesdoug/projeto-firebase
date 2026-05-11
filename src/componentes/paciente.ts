@@ -1,5 +1,5 @@
 export interface FieldType {
-  dataConsulta: string;
+  dataFormatada: any;
   horaConsulta: string;
   nomeMedico: string;
   nomePaciente: string;

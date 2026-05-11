@@ -1,10 +1,10 @@
-import { Layout, Card, Flex, Form, Button, DatePicker, TimePicker, Select, Menu } from 'antd';
+import { Layout, Card, Flex, Form, Button, DatePicker, Select, Menu } from 'antd';
 const { Header, Content, Footer, Sider } = Layout;
 import type { FormProps } from 'antd';
 import type { FieldType } from "./paciente.ts";
+import { Dayjs } from 'dayjs';
 import { LogoutOutlined, UserOutlined, LockOutlined } from "@ant-design/icons";
 import { headerStyle } from '../assets/perfil';
-import dayjs from 'dayjs';
 import { db } from "../services/firebase.ts";
 import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
@@ -17,6 +17,9 @@ function Paciente() {
     const [consultas, setConsulta] = useState<FieldType[]>([]);
     const [especialidades, setEspecialidades] = useState<any[]>([]);
     const [medicos, setMedicos] = useState<any[]>([]);
+    const [selecionaData, setSelecionaData] = useState<Dayjs | null>(null);
+    const [selecionaMedico, setSelecionaMedico] = useState<string>("");
+    const [horarios, setHorarios] = useState<any[]>([]);
     const navigate = useNavigate();
     const auth = getAuth();
 
@@ -38,16 +41,13 @@ function Paciente() {
             where("idPaciente", "==", idPaciente),
             where("status", "==", "agendado"),
         );
-        console.log("IdPaciente:", idPaciente);
         const snapshot = await getDocs(q);
-    
+
         const lista = snapshot.docs.map(doc => ({
             id: doc.id,
             ...(doc.data() as FieldType)
-        })) ;
-         console.log("Resultados:", lista);
+        }));
         setConsulta(lista);
-      
         setLoading(false);
     }
     const getEspecialidades = async () => {
@@ -73,15 +73,43 @@ function Paciente() {
             id: doc.id,
             ...doc.data()
         }));
-
         const options = lista.map((item: any) => ({ value: item.id, label: item.nomeCompleto }))
         setMedicos(options);
+        setLoading(false);
+    }
+    const getHorarios = async (idMedico: string) => {
+        setLoading(true);
+           const dataFormatada = selecionaData?.format("DD/MM/YYYY");
+           console.log(dataFormatada);
+        const ref = collection(db, "agendaMedico");
+        const q = query(
+            ref,
+            where("idMedico", "==", idMedico),
+            where("data", "==", dataFormatada)
+        );
+        const querySnapshot = await getDocs(q);
+        const lista = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        const horariosFormatados = lista.flatMap((item: any) =>
+            item.horarios.map((horario: any) => ({
+                value: horario.hora,
+                label: horario.hora
+            }))
+        );
+        setHorarios(horariosFormatados);
         setLoading(false);
     }
     useEffect(() => {
         getEspecialidades();
     }, []);
 
+    useEffect(() => {
+        if (selecionaMedico && selecionaData) {
+            getHorarios(selecionaMedico);
+        }
+    }, [selecionaMedico, selecionaData]);
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -93,18 +121,21 @@ function Paciente() {
         return () => unsubscribe();
     }, []);
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
-        setLoading(true);
+        setLoading(true); 
         const user = auth.currentUser;
+        console.log(values);
         const { especialidade,
             nomeMedico,
-            dataConsulta,
+            dataFormatada,
             horaConsulta } = values;
         try {
-            const medico = medicos.find( (item) => item.value === nomeMedico);
-            const especialidadeMedico = especialidades.find( (item) => item.value === especialidade); 
+            const dataConsulta = dataFormatada.format("DD/MM/YYYY");
+        
+            const medico = medicos.find((item) => item.value === nomeMedico);
+            const especialidadeMedico = especialidades.find((item) => item.value === especialidade);
             await addDoc(collection(db, "agendamentos"), {
-                dataConsulta, horaConsulta, nomeMedico: medico.label, especialidade: especialidadeMedico.label,
-                idPaciente: user?.uid, idMedico: nomeMedico, status: "agendado", idEspecialidade: especialidade
+                dataFormatada: dataConsulta, horaConsulta, nomeMedico: medico.label, especialidade: especialidadeMedico.label,
+                idPaciente: user?.uid, idMedico: nomeMedico, status: "agendado", idEspecialidade: especialidade,
             });
             toast.success("Consulta agendada com sucesso!");
         } catch (error) {
@@ -184,27 +215,31 @@ function Paciente() {
                                 >
                                     <Select placeholder="Selecione uma médico"
                                         options={medicos}
+                                        onChange={(value) => setSelecionaMedico(value)}
                                         loading={loading}
                                         disabled={loading}
                                     />
                                 </Form.Item>
                                 <Form.Item<FieldType>
                                     label="Data:"
-                                    name="dataConsulta"
-                                    getValueProps={(value) => ({ value: value ? dayjs(value) : undefined })}
-                                    getValueFromEvent={(e) => e?.format("DD/MM/YYYY")}
-                                    rules={[{ required: true, message: 'Please input your date!' }]}
+                                    name="dataFormatada"
+                                    rules={[{ required: true, message: 'Selecione uma data!' }]}
                                 >
-                                    <DatePicker format={"DD/MM/YYYY"} />
+                                    <DatePicker format={"DD/MM/YYYY"}
+                                        value={selecionaData}
+                                        onChange={(date) => setSelecionaData(date)}
+                                        placeholder="Selecione uma data" />
                                 </Form.Item>
                                 <Form.Item<FieldType>
                                     label="Hora:"
                                     name="horaConsulta"
-                                    getValueProps={(value) => ({ value: value ? dayjs(value, "HH:mm") : undefined })}
-                                    getValueFromEvent={(time) => time?.format("HH:mm")}
-                                    rules={[{ required: true, message: 'Please input your time!' }]}
+                                    rules={[{ required: true, message: 'Insira o horário!' }]}
                                 >
-                                    <TimePicker format="HH:mm" />
+                                    <Select placeholder="Selecione um horário"
+                                        options={horarios}
+                                        loading={loading}
+                                        disabled={loading}
+                                    />
                                 </Form.Item>
                                 <Form.Item label={null}>
                                     <Button type="primary" htmlType="submit" loading={loading}
@@ -218,8 +253,7 @@ function Paciente() {
                             {consultas.length > 0 ? (
                                 consultas.map((consulta, index) => (
                                     <div key={index}>
-                                        <p><strong>Paciente:</strong> {consulta.nomePaciente}</p>
-                                        <p><strong>Data:</strong> {consulta.dataConsulta}</p>
+                                        <p><strong>Data:</strong> {consulta.dataFormatada}</p>
                                         <p><strong>Hora:</strong> {consulta.horaConsulta}</p>
                                         <p><strong>Status:</strong> {consulta.status}</p>
                                         <p><strong>Médico:</strong> {consulta.nomeMedico}</p>
